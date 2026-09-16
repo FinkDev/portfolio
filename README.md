@@ -80,22 +80,3 @@ As imagens podem ser ampliadas e fechadas pelo botão, pela tecla Escape ou pelo
 Preto fosco, branco frio, roxo e vinho, com tipografia editorial, capas numeradas e uma grade alternada no desktop. No celular, os projetos passam a uma coluna e os textos se ajustam à largura disponível.
 
 O site inclui indicação de seção atual, progresso de leitura, botão para voltar ao topo, cursos expansíveis, navegação por teclado e respeito à preferência de movimento reduzido. A escolha entre roxo e vinho é salva apenas no navegador. Space Grotesk e DM Sans são carregadas pelo Google Fonts, com fontes locais de reserva.
-
-## Publicar no GitHub Pages
-
-1. Envie o projeto para um repositório seu na branch `main`.
-2. No repositório, selecione **Settings → Pages → Source → GitHub Actions**.
-3. Execute **Actions → Publicar portfólio no GitHub Pages → Run workflow**, ou envie uma alteração para `main`.
-4. Aguarde a execução e copie o endereço do ambiente `github-pages`.
-
-O workflow publica apenas `dist`. As rotas usam fragmentos como `#projeto/projeto-01`, compatíveis com GitHub Pages, inclusive quando o site está em uma subpasta. [Documentação de publicação do GitHub](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
-
-## Pendências de conteúdo
-
-- Revisar a contribuição individual de cada projeto, incluindo o Pet Shop. Os dados específicos já informados foram preservados.
-- Preencher o sexto projeto e revisar sua contribuição individual.
-- Adicionar as screenshots restantes e substituir suas legendas provisórias.
-- Revisar as datas do curso e dos projetos antes da entrega.
-- Conferir os repositórios e o endereço público em uma janela sem login.
-
-O projeto não exige serviços externos além da hospedagem estática e do carregamento opcional das fontes.
