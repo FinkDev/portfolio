@@ -1,5 +1,7 @@
-.sites-runtime/
 node_modules/
 .env
 .env.*
+!.env.example
 .qa/
+.DS_Store
+Thumbs.db
