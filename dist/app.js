@@ -6,6 +6,35 @@
   let revealObserver;
   let sectionObserver;
   let renderedView = '';
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
+  // One delegated, frame-limited interaction; touch and reduced motion stay static.
+  let pointerFrame = 0;
+  main.addEventListener('pointermove', event => {
+    if (reducedMotion.matches || !finePointer.matches || pointerFrame) return;
+    const target = event.target.closest('.hero, .project-cover');
+    if (!target) return;
+    const { clientX, clientY } = event;
+    pointerFrame = requestAnimationFrame(() => {
+      const rect = target.getBoundingClientRect();
+      const x = (clientX - rect.left) / rect.width;
+      const y = (clientY - rect.top) / rect.height;
+      if (target.matches('.hero')) {
+        target.style.setProperty('--orbit-x', `${(x - .5) * 26}px`);
+        target.style.setProperty('--orbit-y', `${(y - .5) * 20}px`);
+      } else {
+        target.style.setProperty('--grid-x', `${(x - .5) * 12}px`);
+        target.style.setProperty('--grid-y', `${(y - .5) * 12}px`);
+      }
+      pointerFrame = 0;
+    });
+  });
+  main.addEventListener('pointerout', event => {
+    const target = event.target.closest('.hero, .project-cover');
+    if (!target || target.contains(event.relatedTarget)) return;
+    cancelAnimationFrame(pointerFrame);
+    pointerFrame = 0;
+    ['--orbit-x', '--orbit-y', '--grid-x', '--grid-y'].forEach(property => target.style.removeProperty(property));
+  });
   const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
   const safeUrl = value => {
     if (!value) return null;
@@ -22,7 +51,7 @@
   const projectSummary = project => !project.summary || project.summary.startsWith('[') ? 'Um novo capítulo da minha trajetória. Os detalhes serão apresentados em breve.' : project.summary;
   const cover = (project, detail = false) => `<div class="project-cover cover-${['purple','wine','silver','dark'].includes(project.color) ? project.color : 'purple'} ${detail ? 'detail-cover' : ''}" aria-hidden="true">
     <div class="cover-top"><span class="mono">PFS / ${escape(project.number)}</span><span class="mono">${escape(project.semester)}</span></div>
-    <span class="cover-number">${escape(project.number)}</span><div class="cover-title">${escape(project.chapter)}</div>${detail ? '' : '<span class="cover-arrow">↗</span>'}
+    <span class="cover-grid"></span><span class="cover-number">${escape(project.number)}</span><div class="cover-title">${escape(project.chapter)}</div>${detail ? '' : '<span class="cover-arrow">↗</span>'}
   </div>`;
   const footer = () => `<footer class="section contact" id="contato">
     <p class="section-kicker"><span>04 /</span> Contato</p>
@@ -32,10 +61,19 @@
   </footer>`;
 
   function home() {
+    const mesh = Array.from({ length: 11 }, (_, i) => {
+      const y = 18 + i * 10;
+      return `<path d="M 0 ${y} C 85 ${y - 65}, 150 ${y + 65}, 260 ${y - 8}"/>`;
+    }).join('') + Array.from({ length: 15 }, (_, i) => {
+      const x = i * 19;
+      return `<path d="M ${x} 0 Q ${x - 55} 72 ${x + 8} 145"/>`;
+    }).join('');
+    const artwork = `<div class="hero-art" aria-hidden="true"><span class="art-checker"></span><svg class="art-mesh" viewBox="0 0 280 145" fill="none" stroke="currentColor" stroke-width=".8">${mesh}</svg><svg class="art-star" viewBox="0 0 100 100"><path fill="currentColor" d="M50 0Q53 47 100 50Q53 53 50 100Q47 53 0 50Q47 47 50 0Z"/></svg><span class="art-caption">DESIGN + CÓDIGO <span>↗</span></span></div>`;
     main.innerHTML = `<section class="hero" id="inicio" aria-labelledby="hero-title">
+      <div class="hero-type-field" aria-hidden="true">${Array.from({ length: 8 }, () => '<span>DESIGN & CÓDIGO</span>').join('')}</div>
       <div class="hero-topline mono"><span>Portfólio acadêmico & pessoal</span><span>Ideias em constante evolução</span></div>
       <div class="hero-body"><h1 class="hero-name" id="hero-title" aria-label="${escape(data.name)}"><span>PEDRO</span><span class="surname">FINK<span class="period">.</span></span></h1>
-        <div class="hero-aside"><p class="eyebrow">${escape(data.role)}</p><p>${escape(data.introduction)}</p><a class="button" href="#projetos">Explore os projetos <span aria-hidden="true">↘</span></a></div>
+        <div class="hero-aside">${artwork}<p class="eyebrow">${escape(data.role)}</p><p>${escape(data.introduction)}</p><a class="button" href="#projetos">Explore os projetos <span aria-hidden="true">↘</span></a></div>
       </div>
       <div class="hero-bottom"><div class="stat"><strong>${String(data.projects.length).padStart(2,'0')}</strong><span>Projetos<br>& experiências</span></div><div class="stat"><strong>06</strong><span>Semestres<br>de aprendizado</span></div><a class="scroll-hint" href="#projetos">Continue explorando <b aria-hidden="true">↓</b></a></div>
     </section>
@@ -82,12 +120,35 @@
 
   function setupObservers() {
     revealObserver?.disconnect(); sectionObserver?.disconnect();
+    // One visual vocabulary, with quieter variants beside long-form content.
+    [['.about', 'INTENÇÃO'], ['.trajectory', 'EVOLUÇÃO'], ['.contact', 'CONVERSA'], ['.detail', 'PROCESSO']].forEach(([selector, word]) => {
+      const section = main.querySelector(selector);
+      if (!section || section.querySelector(':scope > .editorial-texture')) return;
+      const texture = document.createElement('div');
+      texture.className = 'editorial-texture';
+      texture.setAttribute('aria-hidden', 'true');
+      for (let i = 0; i < 3; i++) {
+        const line = document.createElement('span');
+        line.textContent = word;
+        texture.append(line);
+      }
+      section.prepend(texture);
+    });
+    main.querySelectorAll('.detail-row > h2').forEach((heading, index) => {
+      if (heading.querySelector('.detail-index')) return;
+      const marker = document.createElement('span');
+      marker.className = 'detail-index';
+      marker.setAttribute('aria-hidden', 'true');
+      marker.textContent = String(index + 1).padStart(2, '0');
+      heading.prepend(marker);
+    });
+    main.querySelectorAll('.detail-facts, .detail-row, .screenshot-figure, .project-pagination').forEach(element => element.classList.add('reveal'));
     if (!reducedMotion.matches && 'IntersectionObserver' in window) {
       document.body.classList.add('motion-enabled');
       revealObserver = new IntersectionObserver(entries => entries.forEach(entry => {
         if (entry.isIntersecting) { entry.target.classList.remove('pending'); revealObserver.unobserve(entry.target); }
       }), { threshold: .08 });
-      main.querySelectorAll('.reveal').forEach(element => { element.classList.add('pending'); revealObserver.observe(element); });
+      main.querySelectorAll('.reveal, .section-heading > p').forEach(element => { element.classList.add('reveal', 'pending'); revealObserver.observe(element); });
     }
     document.querySelectorAll('[data-nav]').forEach(link => link.removeAttribute('aria-current'));
     if (renderedView.startsWith('project:')) {
@@ -109,6 +170,7 @@
   function route(initial = false) {
     const hash = location.hash.slice(1) || 'inicio';
     const projectRoute = hash.startsWith('projeto/');
+    document.body.classList.toggle('project-view', projectRoute);
     let id = '';
     try { id = decodeURIComponent(hash.slice(8)); } catch { /* invalid routes show the fallback */ }
     const view = projectRoute ? `project:${id}` : 'home';
@@ -136,6 +198,17 @@
     });
   }
   const progressBar = document.querySelector('.reading-progress span');
+  const wordmark = document.querySelector('.wordmark');
+  let logoAnimation;
+  wordmark.addEventListener('click', () => {
+    if (reducedMotion.matches) return;
+    logoAnimation?.cancel();
+    logoAnimation = wordmark.querySelector('span').animate([
+      { transform: 'translateX(0) rotate(0)' },
+      { transform: 'translateX(22px) rotate(180deg)', offset: .48 },
+      { transform: 'translateX(0) rotate(360deg)' }
+    ], { duration: 750, easing: 'cubic-bezier(.22,.68,.2,1)' });
+  });
   const backTop = document.querySelector('.back-top');
   let scrollTicking = false;
   function updateProgress() {
@@ -165,7 +238,16 @@
   dialog.addEventListener('close', () => document.body.classList.remove('dialog-open'));
   dialog.querySelector('.dialog-close').addEventListener('click',() => dialog.close());
   dialog.addEventListener('click',event => { if (event.target === dialog) { const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close(); } });
-  reducedMotion.addEventListener('change', () => { document.body.classList.remove('motion-enabled'); setupObservers(); });
+  reducedMotion.addEventListener('change', () => {
+    logoAnimation?.cancel();
+    cancelAnimationFrame(pointerFrame);
+    pointerFrame = 0;
+    main.querySelectorAll('.hero, .project-cover').forEach(element => {
+      ['--orbit-x', '--orbit-y', '--grid-x', '--grid-y'].forEach(property => element.style.removeProperty(property));
+    });
+    document.body.classList.remove('motion-enabled');
+    setupObservers();
+  });
   addEventListener('hashchange', () => route());
   document.querySelector('[data-nav="projetos"] span').textContent = String(data.projects.length).padStart(2,'0');
   route(true);
