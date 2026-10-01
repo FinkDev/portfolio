@@ -1,4 +1,4 @@
-name: Publicar portfólio no GitHub Pages
+name: Publicar portfólio pf. no GitHub Pages
 on:
   push:
     branches: [main]
