@@ -218,6 +218,9 @@
   }
   addEventListener('scroll', () => { if (!scrollTicking) { scrollTicking = true; requestAnimationFrame(updateProgress); } }, { passive:true });
   addEventListener('resize',updateProgress);
+  // Expanded courses and loaded media change the document's reading length.
+  main.addEventListener('toggle', updateProgress, true);
+  main.addEventListener('load', updateProgress, true);
   document.querySelector('.skip-link').addEventListener('click', event => {
     event.preventDefault();
     main.focus({preventScroll:true});

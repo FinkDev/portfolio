@@ -22,6 +22,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/configure-pages@v5
+      - name: Versionar arquivos para atualizar o cache dos navegadores
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha256
+          import re
+          root = Path('dist')
+          page = root / 'index.html'
+          html = page.read_text(encoding='utf-8')
+          for name in ('styles.css', 'content.js', 'app.js'):
+              version = sha256((root / name).read_bytes()).hexdigest()[:12]
+              html, count = re.subn(r'\./' + re.escape(name) + r'(?:\?v=[a-f0-9]+)?', f'./{name}?v={version}', html)
+              if count != 1:
+                  raise RuntimeError(f'Referência inesperada para {name}: {count}')
+          page.write_text(html, encoding='utf-8')
+          PY
       - uses: actions/upload-pages-artifact@v4
         with:
           path: dist
