@@ -54,8 +54,8 @@ window.PORTFOLIO = {
       personalTechnologies: ['JavaScript', 'Vue.js', 'HTML'],
       learning: 'O principal desafio foi a implementação de uma interface responsiva e dinâmica, que se adaptasse a diferentes dispositivos e tamanhos de tela. Aprendi a utilizar técnicas de design responsivo, media queries e frameworks CSS para garantir uma experiência consistente para todos os usuários.',
       screenshots: [
-        { src: null, alt: 'Tela principal do projeto', caption: '[Tela principal — descreva o que esta imagem apresenta.]' },
-        { src: null, alt: 'Funcionalidade do projeto em uso', caption: '[Funcionalidade em uso — descreva a interação apresentada.]' },
+        { src: './assets/Repositorio2.png', alt: 'Tela principal do projeto', caption: 'Tela de apresentação dos projetos cadastrados.' },
+        { src: './assets/Repositorio.png', alt: 'Cadastro de projetos', caption: 'Tela de cadastro de novos projetos.' },
       ],
     },
     { id: 'projeto-03', number: '03', semester: '3º semestre', chapter: 'PILATES', name: 'Sistema de Gerenciamento para Academia de Pilates', summary: 'Sistema para gerenciamento de uma academia de pilates, com foco em facilitar o controle de agendamento de aulas e gerenciamento de clientes e funcionários.', color: 'silver',
@@ -67,8 +67,8 @@ window.PORTFOLIO = {
       personalTechnologies: ['Java', 'HTML', 'CSS'],
       learning: 'O principal desafio foi a implementação de um sistema de agendamento eficiente, que permitisse aos clientes marcar aulas de forma simples e rápida. Aprendi a utilizar técnicas de design de interface e experiência do usuário para criar uma interface intuitiva e fácil de usar.',
       screenshots: [
-        { src: null, alt: 'Tela principal do projeto', caption: '[Tela principal — descreva o que esta imagem apresenta.]' },
-        { src: null, alt: 'Funcionalidade do projeto em uso', caption: '[Funcionalidade em uso — descreva a interação apresentada.]' },
+        { src: './assets/Pilates.png', alt: 'Landing page da academia de pilates', caption: 'Landing page da academia de pilates, apresentando os serviços oferecidos e informações de contato.' },
+        { src: './assets/Pilates2.png', alt: 'Funcionalidade do projeto em uso', caption: 'Funcionalidade do projeto em uso, demonstrando o login.' },
       ],
      },
     {
@@ -81,8 +81,8 @@ window.PORTFOLIO = {
       personalTechnologies: ['HTML', 'CSS', 'JavaScript'],
       learning: 'O principal desafio foi integrar o sistema de gerenciamento com a landing page, garantindo que as informações fossem demonstradas de forma clara e eficiente mantendo a identidade visual da marca. Aprendi a implementar funcionalidades de agendamento e gerenciamento de dados de forma eficiente.',
       screenshots: [
-        { src: null, alt: 'Tela principal do projeto', caption: '[Tela principal — descreva o que esta imagem apresenta.]' },
-        { src: null, alt: 'Funcionalidade do projeto em uso', caption: '[Funcionalidade em uso — descreva a interação apresentada.]' },
+        { src: './assets/EsferaOdonto.png', alt: 'Landing page da clínica odontológica', caption: 'Landing page da clínica odontológica, apresentando os serviços oferecidos e informações de contato.' },
+        { src: './assets/EsferaOdonto2.png', alt: 'Funcionalidade do projeto em uso', caption: 'Funcionalidade do projeto em uso, demonstrando o cadastro de pacientes.' },
       ],
     },
     {
@@ -95,8 +95,8 @@ window.PORTFOLIO = {
       personalTechnologies: ['JavaScript'],
       learning: 'O principal desafio foi a implementação de uma interface responsiva e dinâmica, que se adaptasse a diferentes dispositivos e tamanhos de tela principalmente mobile. Aprendi a utilizar técnicas de design responsivo, media queries e frameworks CSS para garantir uma experiência consistente para todos os usuários.',
       screenshots: [
-        { src: null, alt: 'Tela principal do projeto', caption: '[Tela principal — descreva o que esta imagem apresenta.]' },
-        { src: null, alt: 'Funcionalidade do projeto em uso', caption: '[Funcionalidade em uso — descreva a interação apresentada.]' },
+        { src: './assets/PelosLamb.png', alt: 'Telas principais do projeto', caption: 'Tela principal do aplicativo de gerenciamento de pet shop, com agendamentos, clientes e funcionários.' },
+        { src: './assets/PelosLamb2.png', alt: 'Gerenciamento de equipe e notificação em tempo real', caption: 'Gerenciamento de equipe e notificação em tempo real no aplicativo de gerenciamento de pet shop.' },
       ],
     },
     { id: 'projeto-06', number: '06', semester: '6º semestre', chapter: 'O próximo passo.', name: '[Nome do projeto 06]', summary: '[Uma breve descrição do problema e da solução desenvolvida.]', color: 'purple', role: '[Função a definir]', participation: '[Participação individual a adicionar.]' },
