@@ -1,16 +1,62 @@
 (() => {
   'use strict';
-  const data = window.PORTFOLIO;
+  let language = document.documentElement.lang === 'en' ? 'en' : 'pt-BR';
+  let data = language === 'en' ? window.PORTFOLIO_EN : window.PORTFOLIO;
+  const translate = text => language === 'en' ? (window.PORTFOLIO_UI[text] ?? text) : text;
+  const originalText = new WeakMap();
+  const originalAttributes = new WeakMap();
+  function localize(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node.parentElement.closest('script, style, [data-language]')) continue;
+      if (!originalText.has(node)) originalText.set(node, node.textContent);
+      const original = originalText.get(node);
+      node.textContent = original.replace(/\S[\s\S]*\S|\S/, text => translate(text));
+    }
+    [root, ...root.querySelectorAll('[aria-label]')].filter(element => element.hasAttribute('aria-label')).forEach(element => {
+      if (!originalAttributes.has(element)) originalAttributes.set(element, element.getAttribute('aria-label'));
+      element.setAttribute('aria-label', translate(originalAttributes.get(element)));
+    });
+  }
+  const savePreference = (key, value) => { try { localStorage.setItem(key, value); } catch { /* Optional storage. */ } };
   const main = document.querySelector('main');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const motionAllowed = () => !reducedMotion.matches;
   let revealObserver;
   let sectionObserver;
   let renderedView = '';
+  const courseAnimations = new Map();
+  main.addEventListener('click', event => {
+    const summary = event.target.closest('.course-item > summary');
+    if (!summary || !motionAllowed()) return;
+    event.preventDefault();
+    const item = summary.parentElement;
+    const previous = courseAnimations.get(item);
+    const opening = previous ? !previous.opening : !item.open;
+    const start = item.getBoundingClientRect().height;
+    previous?.animation.cancel();
+    item.style.height = '';
+    item.open = opening;
+    const end = item.getBoundingClientRect().height;
+    item.open = true;
+    item.style.overflow = 'hidden';
+    const animation = item.animate([{ height: `${start}px` }, { height: `${end}px` }], {
+      duration: 320, easing: 'cubic-bezier(.22,.8,.25,1)'
+    });
+    courseAnimations.set(item, { animation, opening });
+    animation.onfinish = () => {
+      item.open = opening;
+      item.style.overflow = '';
+      courseAnimations.delete(item);
+      updateProgress();
+    };
+  });
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
   // One delegated, frame-limited interaction; touch and reduced motion stay static.
   let pointerFrame = 0;
   main.addEventListener('pointermove', event => {
-    if (reducedMotion.matches || !finePointer.matches || pointerFrame) return;
+    if (!motionAllowed() || !finePointer.matches || pointerFrame) return;
     const target = event.target.closest('.hero, .project-cover');
     if (!target) return;
     const { clientX, clientY } = event;
@@ -20,7 +66,6 @@
       const y = (clientY - rect.top) / rect.height;
       if (target.matches('.hero')) {
         target.style.setProperty('--orbit-x', `${(x - .5) * 26}px`);
-        target.style.setProperty('--orbit-y', `${(y - .5) * 20}px`);
       } else {
         target.style.setProperty('--grid-x', `${(x - .5) * 12}px`);
         target.style.setProperty('--grid-y', `${(y - .5) * 12}px`);
@@ -33,7 +78,7 @@
     if (!target || target.contains(event.relatedTarget)) return;
     cancelAnimationFrame(pointerFrame);
     pointerFrame = 0;
-    ['--orbit-x', '--orbit-y', '--grid-x', '--grid-y'].forEach(property => target.style.removeProperty(property));
+    ['--orbit-x', '--grid-x', '--grid-y'].forEach(property => target.style.removeProperty(property));
   });
   const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
   const safeUrl = value => {
@@ -47,31 +92,25 @@
     ? `<div class="tags">${list.map(item => `<span>${escape(item)}</span>`).join('')}</div>`
     : '<p class="placeholder-note">Tecnologias a informar.</p>';
   const paragraphs = value => String(value || '').split(/\n\s*\n/).filter(Boolean).map(text => `<p>${escape(text)}</p>`).join('');
-  const projectName = project => !project.name || project.name.startsWith('[') ? 'Projeto em preparação' : project.name;
-  const projectSummary = project => !project.summary || project.summary.startsWith('[') ? 'Um novo capítulo da minha trajetória. Os detalhes serão apresentados em breve.' : project.summary;
+  const projectName = project => !project.name || project.name.startsWith('[') ? translate('Projeto em preparação') : project.name;
+  const projectSummary = project => !project.summary || project.summary.startsWith('[') ? translate('Um novo capítulo da minha trajetória. Os detalhes serão apresentados em breve.') : project.summary;
   const cover = (project, detail = false) => `<div class="project-cover cover-${['purple','wine','silver','dark'].includes(project.color) ? project.color : 'purple'} ${detail ? 'detail-cover' : ''}" aria-hidden="true">
     <div class="cover-top"><span class="mono">PFS / ${escape(project.number)}</span><span class="mono">${escape(project.semester)}</span></div>
     <span class="cover-grid"></span><span class="cover-number">${escape(project.number)}</span><div class="cover-title">${escape(project.chapter)}</div>${detail ? '' : '<span class="cover-arrow"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span>'}
   </div>`;
   const footer = () => `<footer class="section contact" id="contato">
     <p class="section-kicker"><span>04 /</span> Contato</p>
-    <h2 class="contact-heading">Boas ideias começam<br>com uma <span>conversa.</span></h2>
+    <h2 class="contact-heading">Vamos falar de<br>um <span>projeto?</span></h2>
     <div class="contact-links">${data.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) ? `<a class="text-link" href="mailto:${escape(data.email)}">${escape(data.email)} <span aria-hidden="true"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></a>` : '<span class="unavailable">[E-mail a adicionar] <span aria-hidden="true"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></span>'}${externalLink(data.github, 'Meu GitHub', '[GitHub a adicionar]')}</div>
     <div class="footer-line"><span>© ${new Date().getFullYear()} ${escape(data.name)}</span><span>Portfólio acadêmico · Fatec</span><a href="#inicio">De volta ao início <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M12 20V4M5 11l7-7 7 7"/></svg></a></div>
   </footer>`;
 
   function home() {
-    const mesh = Array.from({ length: 11 }, (_, i) => {
-      const y = 18 + i * 10;
-      return `<path d="M 0 ${y} C 85 ${y - 65}, 150 ${y + 65}, 260 ${y - 8}"/>`;
-    }).join('') + Array.from({ length: 15 }, (_, i) => {
-      const x = i * 19;
-      return `<path d="M ${x} 0 Q ${x - 55} 72 ${x + 8} 145"/>`;
-    }).join('');
-    const artwork = `<div class="hero-art" aria-hidden="true"><span class="art-checker"></span><svg class="art-mesh" viewBox="0 0 280 145" fill="none" stroke="currentColor" stroke-width=".8">${mesh}</svg><svg class="art-star" viewBox="0 0 100 100"><path fill="currentColor" d="M50 0Q53 47 100 50Q53 53 50 100Q47 53 0 50Q47 47 50 0Z"/></svg><span class="art-caption">DESIGN + CÓDIGO <span><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></span></div>`;
+    const star = '<svg viewBox="0 0 200 200" aria-hidden="true" focusable="false"><path fill="currentColor" d="M100 8C106 77 123 94 192 100C123 106 106 123 100 192C94 123 77 106 8 100C77 94 94 77 100 8Z"/></svg>';
+    const artwork = `<div class="kinetic-object"><button class="star star-large" aria-label="${translate('Animar estrela maior')}"><span class="star-bounce">${star}</span></button><button class="star star-small" aria-label="${translate('Animar estrela menor')}"><span class="star-bounce">${star}</span></button></div>`;
     main.innerHTML = `<section class="hero" id="inicio" aria-labelledby="hero-title">
       <div class="hero-type-field" aria-hidden="true">${Array.from({ length: 8 }, () => '<span>DESIGN & CÓDIGO</span>').join('')}</div>
-      <div class="hero-topline mono"><span>Portfólio acadêmico & pessoal</span><span>Ideias em constante evolução</span></div>
+      <div class="hero-topline mono"><span>Portfólio acadêmico & pessoal</span><span>Entre o código e o desenho.</span></div>
       <div class="hero-body"><h1 class="hero-name" id="hero-title" aria-label="${escape(data.name)}"><span>PEDRO</span><span class="surname">FINK<span class="period">.</span></span></h1>
         <div class="hero-aside">${artwork}<p class="eyebrow">${escape(data.role)}</p><p>${escape(data.introduction)}</p><a class="button" href="#projetos">Explore os projetos <span aria-hidden="true"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 5 19 19M5 19h14V5"/></svg></span></a></div>
       </div>
@@ -79,34 +118,34 @@
     </section>
     <section class="section projects" id="projetos" aria-labelledby="projects-title">
       <p class="section-kicker"><span>01 /</span> Projetos selecionados</p>
-      <div class="section-heading"><h2 class="section-title" id="projects-title">Do pensamento<br><em>à prática.</em></h2><p>Interfaces, sistemas e os aprendizados de cada etapa da minha formação.</p></div>
-      <div class="project-grid">${data.projects.map(project => `<a class="project-card reveal" id="card-${escape(project.id)}" href="#projeto/${encodeURIComponent(project.id)}" aria-label="Abrir ${escape(projectName(project))} — ${escape(project.semester)}">${cover(project)}<div class="project-info"><div class="project-meta"><span>${escape(project.category)}</span><span>${escape(project.semester)}</span></div><h3>${escape(projectName(project))}</h3><p>${escape(projectSummary(project))}</p><span class="project-cta">Conhecer o projeto <span aria-hidden="true"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></span></div></a>`).join('')}</div>
+      <div class="section-heading"><h2 class="section-title" id="projects-title">O que saiu<br><em>do rascunho.</em></h2><p>Seis semestres entre telas, sistemas e trabalho em equipe.</p></div>
+      <div class="project-grid">${data.projects.map(project => `<a class="project-card reveal" id="card-${escape(project.id)}" href="#projeto/${encodeURIComponent(project.id)}" aria-label="${translate('Abrir')} ${escape(projectName(project))} — ${escape(project.semester)}">${cover(project)}<div class="project-info"><div class="project-meta"><span>${escape(project.category)}</span><span>${escape(project.semester)}</span></div><h3>${escape(projectName(project))}</h3><p>${escape(projectSummary(project))}</p><span class="project-cta">Conhecer o projeto <span aria-hidden="true"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></span></div></a>`).join('')}</div>
     </section>
     <section class="section about" id="sobre" aria-labelledby="about-title"><p class="section-kicker"><span>02 /</span> Quem está por trás</p>
       <div class="about-layout"><div class="portrait reveal">${safeUrl(data.photo) ? `<img src="${safeUrl(data.photo)}" alt="${escape(data.photoAlt)}" loading="lazy" />` : '<span class="portrait-initials" aria-hidden="true">pf.</span><div class="portrait-caption"><span>Seu retrato entra aqui</span><span>FOTO / 01</span></div>'}</div>
-      <div class="about-copy reveal"><h2 class="section-title" id="about-title">Curiosidade move.<br>Intenção <span>guia.</span></h2><p>${escape(data.about)}</p><p class="placeholder-note">${escape(data.aboutNote)}</p><div class="about-tags"><span>Tecnologia</span><span>Design</span><span>UX/UI</span><span>Desenvolvimento</span></div>${externalLink(data.github,'Encontre meu código','[Perfil do GitHub a adicionar]')}</div></div>
+      <div class="about-copy reveal"><h2 class="section-title" id="about-title">Eu reparo<br>nos <span>detalhes.</span></h2><p>${escape(data.about)}</p><p class="placeholder-note">${escape(data.aboutNote)}</p><div class="about-tags"><span>Tecnologia</span><span>Design</span><span>UX/UI</span><span>Desenvolvimento</span></div>${externalLink(data.github,'Encontre meu código','[Perfil do GitHub a adicionar]')}</div></div>
     </section>
-    <section class="section trajectory" id="trajetoria" aria-labelledby="trajectory-title"><p class="section-kicker"><span>03 /</span> Trajetória</p><div class="section-heading"><h2 class="section-title" id="trajectory-title">Aprender. Fazer.<br><em>Continuar.</em></h2><p>Formação, experiências e os conhecimentos que fazem parte do caminho.</p></div>
+    <section class="section trajectory" id="trajetoria" aria-labelledby="trajectory-title"><p class="section-kicker"><span>03 /</span> Trajetória</p><div class="section-heading"><h2 class="section-title" id="trajectory-title">Onde venho<br><em>aprendendo.</em></h2><p>Da Fatec ao trabalho: as experiências que alimentam o que eu faço.</p></div>
       <div class="resume-row reveal"><h3 class="resume-label"><span>01</span> Formação</h3><div class="resume-content"><div class="education-head"><div><h3>${escape(data.course.name)}</h3><p>${escape(data.course.institution)}</p></div><span class="chip">${escape(data.course.period)}</span></div><div class="dates"><div><small>Início do curso</small>${escape(data.course.start)}</div><div><small>Conclusão prevista</small>${escape(data.course.end)}</div></div>${(data.previousEducation || []).map(item => `<article class="previous-education"><p class="meta">${escape(item.start)} — ${escape(item.end)} · ${escape(item.hours)}</p><h3>${escape(item.name)}</h3><p>${escape(item.institution)} · ${escape(item.location)}</p></article>`).join('')}</div></div>
       <div class="resume-row reveal"><h3 class="resume-label"><span>02</span> Experiência</h3><div class="resume-content">${data.experiences.length ? data.experiences.map(item => `<article class="experience"><p class="meta">${escape(item.start)} — ${escape(item.end)}</p><h3>${escape(item.role)}</h3><h4>${escape(item.company)}</h4><div class="experience-description">${paragraphs(item.description)}</div></article>`).join('') : '<p>Minha trajetória profissional está começando. Os projetos acadêmicos registram minhas experiências até aqui.</p>'}</div></div>
       <div class="resume-row reveal"><h3 class="resume-label"><span>03</span> Cursos de extensão</h3><div class="resume-content">${data.courses.length ? data.courses.map(item => `<details class="course-item"><summary><div><h3>${escape(item.name)}</h3><p>${escape(item.institution)} · ${escape(item.hours)}</p></div><span class="plus" aria-hidden="true">+</span></summary><div class="course-details"><div><span>Local / modalidade</span>${escape(item.location)}</div><div><span>Carga horária</span>${escape(item.hours)}</div><div><span>Início</span>${escape(item.start)}</div><div><span>Término</span>${escape(item.end)}</div></div></details>`).join('') : '<p>Cursos de extensão a adicionar.</p>'}</div></div>
       <div class="resume-row reveal"><h3 class="resume-label"><span>04</span> Idiomas</h3><div class="resume-content language-list">${data.languages.map(item => `<div><h3>${escape(item.name)}</h3><p>${escape(item.level)}</p></div>`).join('')}</div></div>
     </section>${footer()}`;
-    document.title = `${data.name} — Portfólio`;
+    document.title = `${data.name} — ${language === 'en' ? 'Portfolio' : 'Portfólio'}`;
   }
 
   function detail(project) {
     const next = data.projects[(data.projects.indexOf(project) + 1) % data.projects.length];
     const screenshots = Array.isArray(project.screenshots) ? project.screenshots : [];
     main.innerHTML = `<article class="section detail"><a href="#card-${escape(project.id)}" class="detail-back"><span aria-hidden="true"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M20 12H4M11 5l-7 7 7 7"/></svg></span> Voltar aos projetos</a>
-      <p class="section-kicker"><span>PROJETO ${escape(project.number)} /</span> ${escape(project.semester)}</p><h1 class="detail-heading" tabindex="-1">${escape(projectName(project))}</h1><p class="detail-summary">${escape(projectSummary(project))}</p>
+      <p class="section-kicker"><span>${translate('PROJETO')} ${escape(project.number)} /</span> ${escape(project.semester)}</p><h1 class="detail-heading" tabindex="-1">${escape(projectName(project))}</h1><p class="detail-summary">${escape(projectSummary(project))}</p>
       <div class="detail-facts"><div><p class="meta">Período</p><p>${escape(project.period)}</p></div><div><p class="meta">Minha função</p><p>${escape(project.role)}</p></div><div><p class="meta">Código-fonte</p>${externalLink(project.repository,'Ver repositório','[Repositório a adicionar]')}</div></div>${cover(project, true)}
       <section class="detail-row"><h2>Sobre o projeto</h2><div><p>${escape(project.description)}</p><h3>Tecnologias do projeto</h3>${tags(project.technologies)}</div></section>
       <section class="detail-row"><h2>Minha participação</h2><div><p>${escape(project.participation)}</p><h3>O que eu utilizei</h3>${tags(project.personalTechnologies)}<h3>Desafios & aprendizados</h3><p>${escape(project.learning)}</p></div></section>
-      <section class="screenshots"><h2>O projeto em funcionamento.</h2><p>Registro das telas e das principais funcionalidades.${screenshots.some(shot => safeUrl(shot.src)) ? ' Selecione uma imagem para ampliar.' : ''}</p><div class="screenshot-grid">${screenshots.map((shot,index) => `<figure class="screenshot-figure">${safeUrl(shot.src) ? `<button class="screenshot-button" data-shot="${index}" aria-label="Ampliar: ${escape(shot.alt)}"><img src="${safeUrl(shot.src)}" alt="${escape(shot.alt)}" loading="lazy" /><span class="image-zoom" aria-hidden="true">Ampliar <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></button>` : `<div class="image-placeholder"><span class="placeholder-icon" aria-hidden="true">[ ${String(index+1).padStart(2,'0')} ]</span><p>Screenshot a adicionar</p><small>${escape(shot.alt)}</small></div>`}<figcaption>${escape(shot.caption)}</figcaption></figure>`).join('')}</div></section>
-      <nav class="project-pagination" aria-label="Navegação entre projetos"><a href="#projetos"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M20 12H4M11 5l-7 7 7 7"/></svg> Todos os projetos</a><a class="next-project" href="#projeto/${encodeURIComponent(next.id)}"><small>Próximo projeto / ${escape(next.number)}</small>${escape(projectName(next))} <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></a></nav>
+      <section class="screenshots"><h2>O projeto em funcionamento.</h2><p>Registro das telas e das principais funcionalidades.${screenshots.some(shot => safeUrl(shot.src)) ? ' Selecione uma imagem para ampliar.' : ''}</p><div class="screenshot-grid">${screenshots.map((shot,index) => `<figure class="screenshot-figure">${safeUrl(shot.src) ? `<button class="screenshot-button" data-shot="${index}" aria-label="${translate('Ampliar')}: ${escape(shot.alt)}"><img src="${safeUrl(shot.src)}" alt="${escape(shot.alt)}" loading="lazy" /><span class="image-zoom" aria-hidden="true">Ampliar <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></button>` : `<div class="image-placeholder"><span class="placeholder-icon" aria-hidden="true">[ ${String(index+1).padStart(2,'0')} ]</span><p>Screenshot a adicionar</p><small>${escape(shot.alt)}</small></div>`}<figcaption>${escape(shot.caption)}</figcaption></figure>`).join('')}</div></section>
+      <nav class="project-pagination" aria-label="Navegação entre projetos"><a href="#projetos"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M20 12H4M11 5l-7 7 7 7"/></svg> Todos os projetos</a><a class="next-project" href="#projeto/${encodeURIComponent(next.id)}"><small>${translate('Próximo projeto')} / ${escape(next.number)}</small>${escape(projectName(next))} <svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></a></nav>
     </article>${footer()}`;
-    document.title = `${projectName(project)} — ${data.shortName}`;
+    document.title = `${translate(projectName(project))} — ${data.shortName}`;
     main.querySelectorAll('[data-shot]').forEach(button => button.addEventListener('click', () => {
       const shot = screenshots[Number(button.dataset.shot)];
       const dialog = document.querySelector('#image-dialog');
@@ -121,7 +160,7 @@
   function setupObservers() {
     revealObserver?.disconnect(); sectionObserver?.disconnect();
     // One visual vocabulary, with quieter variants beside long-form content.
-    [['.about', 'INTENÇÃO'], ['.trajectory', 'EVOLUÇÃO'], ['.contact', 'CONVERSA'], ['.detail', 'PROCESSO']].forEach(([selector, word]) => {
+    [['.contact', 'CONTATO'], ['.detail', 'PROCESSO']].forEach(([selector, word]) => {
       const section = main.querySelector(selector);
       if (!section || section.querySelector(':scope > .editorial-texture')) return;
       const texture = document.createElement('div');
@@ -143,7 +182,7 @@
       heading.prepend(marker);
     });
     main.querySelectorAll('.detail-facts, .detail-row, .screenshot-figure, .project-pagination').forEach(element => element.classList.add('reveal'));
-    if (!reducedMotion.matches && 'IntersectionObserver' in window) {
+    if (!!motionAllowed() && 'IntersectionObserver' in window) {
       document.body.classList.add('motion-enabled');
       revealObserver = new IntersectionObserver(entries => entries.forEach(entry => {
         if (entry.isIntersecting) { entry.target.classList.remove('pending'); revealObserver.unobserve(entry.target); }
@@ -159,10 +198,11 @@
       }), { rootMargin: '-15% 0px -60% 0px' });
       main.querySelectorAll('section[id],footer[id]').forEach(element => sectionObserver.observe(element));
     }
+    localize(main);
     // Images fail gracefully if a local asset is renamed or removed later.
     main.querySelectorAll('img').forEach(img => img.addEventListener('error', () => {
       const replacement = document.createElement('div'); replacement.className = 'image-placeholder';
-      replacement.textContent = `Imagem indisponível: ${img.alt}`;
+      replacement.textContent = `${translate('Imagem indisponível')}: ${img.alt}`;
       (img.closest('.screenshot-button') || img).replaceWith(replacement);
     }));
   }
@@ -176,10 +216,14 @@
     const view = projectRoute ? `project:${id}` : 'home';
     const changed = view !== renderedView;
     if (changed) {
+      starAnimations.forEach(animation => animation.cancel());
+      starAnimations.clear();
+      courseAnimations.forEach(({ animation }) => animation.cancel());
+      courseAnimations.clear();
       if (projectRoute) {
         const project = data.projects.find(item => item.id === id);
         if (project) detail(project);
-        else { main.innerHTML = '<section class="section not-found"><p class="section-kicker">Projeto não encontrado</p><h1>Vamos voltar?</h1><p>Este projeto não está no portfólio.</p><a class="button" href="#projetos">Explorar os projetos <span aria-hidden="true"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></a></section>'; document.title = 'Projeto não encontrado — Pedro Fink'; }
+        else { main.innerHTML = '<section class="section not-found"><p class="section-kicker">Projeto não encontrado</p><h1>Vamos voltar?</h1><p>Este projeto não está no portfólio.</p><a class="button" href="#projetos">Explorar os projetos <span aria-hidden="true"><svg class="icon-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true" focusable="false"><path d="M5 19 19 5M5 5h14v14"/></svg></span></a></section>'; document.title = `${translate('Projeto não encontrado')} — Pedro Fink`; }
       } else home();
       renderedView = view; setupObservers();
     }
@@ -190,7 +234,7 @@
       } else {
         const target = document.getElementById(hash);
         if (target) {
-          target.scrollIntoView({ behavior:changed || initial || reducedMotion.matches ? 'instant' : 'smooth' });
+          target.scrollIntoView({ behavior:changed || initial || !motionAllowed() ? 'instant' : 'smooth' });
           if (changed && !initial) { if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex','-1'); target.focus({preventScroll:true}); }
         } else if (changed) window.scrollTo({top:0,behavior:'instant'});
       }
@@ -201,7 +245,7 @@
   const wordmark = document.querySelector('.wordmark');
   let logoAnimation;
   wordmark.addEventListener('click', () => {
-    if (reducedMotion.matches) return;
+    if (!motionAllowed()) return;
     logoAnimation?.cancel();
     logoAnimation = wordmark.querySelector('span').animate([
       { transform: 'translateX(0) rotate(0)' },
@@ -224,33 +268,135 @@
   document.querySelector('.skip-link').addEventListener('click', event => {
     event.preventDefault();
     main.focus({preventScroll:true});
-    main.scrollIntoView({behavior:reducedMotion.matches ? 'instant' : 'smooth'});
+    main.scrollIntoView({behavior:!motionAllowed() ? 'instant' : 'smooth'});
   });
   backTop.addEventListener('click', () => {
-    window.scrollTo({ top:0, behavior:reducedMotion.matches ? 'instant' : 'smooth' });
+    window.scrollTo({ top:0, behavior:!motionAllowed() ? 'instant' : 'smooth' });
     document.querySelector('.wordmark').focus({preventScroll:true});
   });
-  function setAccent(accent) {
-    document.body.dataset.accent = accent === 'wine' ? 'wine' : 'purple';
-    document.querySelectorAll('[data-accent]').forEach(button => { if (button.matches('button')) button.setAttribute('aria-pressed',String(button.dataset.accent === document.body.dataset.accent)); });
-    try { localStorage.setItem('pfs-accent',document.body.dataset.accent); } catch { /* optional preference */ }
+  const preferences = document.querySelector('#preferences-panel');
+  const preferencesTrigger = document.querySelector('.dock-trigger');
+  function syncPreferences() {
+    ['theme', 'accent', 'language'].forEach(key => {
+      const selected = key === 'language' ? language : document.documentElement.dataset[key];
+      preferences.querySelectorAll(`[data-${key}]`).forEach(button => button.setAttribute('aria-pressed', String(button.dataset[key] === selected)));
+    });
+    document.querySelector('meta[name="theme-color"]').content = document.documentElement.dataset.theme === 'light' ? '#f5f2f6' : '#111112';
   }
-  try { setAccent(localStorage.getItem('pfs-accent') || 'purple'); } catch { setAccent('purple'); }
-  document.querySelectorAll('.swatch').forEach(button => button.addEventListener('click',() => setAccent(button.dataset.accent)));
+  const dock = document.querySelector('.appearance-dock');
+  let closePanelTimer;
+  function setPanelOpen(open, restoreFocus = false) {
+    clearTimeout(closePanelTimer);
+    if (restoreFocus) preferencesTrigger.focus({ preventScroll: true });
+    preferences.hidden = !open;
+    preferencesTrigger.setAttribute('aria-expanded', String(open));
+  }
+  preferencesTrigger.addEventListener('click', () => setPanelOpen(true));
+  preferencesTrigger.addEventListener('keydown', event => {
+    if (event.key === 'ArrowDown') { event.preventDefault(); setPanelOpen(true); preferences.querySelector('.preference-options button').focus(); }
+  });
+  dock.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') setPanelOpen(true); });
+  dock.addEventListener('pointerleave', event => {
+    if (event.pointerType === 'mouse' && !dock.contains(document.activeElement)) closePanelTimer = setTimeout(() => setPanelOpen(false), 180);
+  });
+  dock.addEventListener('focusin', event => { if (event.target === preferencesTrigger && event.target.matches(':focus-visible')) setPanelOpen(true); });
+  dock.addEventListener('focusout', event => { if (!dock.contains(event.relatedTarget)) setPanelOpen(false); });
+  preferences.querySelector('.preferences-close').addEventListener('click', () => setPanelOpen(false, true));
+  document.addEventListener('pointerdown', event => { if (!dock.contains(event.target)) setPanelOpen(false); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && !preferences.hidden) { event.preventDefault(); setPanelOpen(false, true); } });
+  let appearanceTimer;
+  let languageAnimation;
+  function transitionAppearance() {
+    if (!motionAllowed()) return;
+    clearTimeout(appearanceTimer);
+    document.documentElement.classList.add('changing-appearance');
+    appearanceTimer = setTimeout(() => document.documentElement.classList.remove('changing-appearance'), 400);
+  }
+  preferences.addEventListener('click', event => {
+    const button = event.target.closest('.preference-options button');
+    if (!button) return;
+    const key = Object.keys(button.dataset)[0];
+    const value = button.dataset[key];
+    if ((key === 'language' ? language : document.documentElement.dataset[key]) === value) return;
+    if (key === 'language') {
+      const anchor = [...main.querySelectorAll('section[id], footer[id], .detail')].filter(el => el.getBoundingClientRect().top < innerHeight).at(-1);
+      const anchorId = anchor?.id;
+      const anchorOffset = anchor?.getBoundingClientRect().top;
+      const oldY = scrollY;
+      const openedCourses = [...main.querySelectorAll('.course-item')].map(item => item.open);
+      language = value;
+      data = value === 'en' ? window.PORTFOLIO_EN : window.PORTFOLIO;
+      document.documentElement.lang = value;
+      renderedView = '';
+      route(true);
+      localize(document.querySelector('.site-header'));
+      localize(dock);
+      localize(document.querySelector('#image-dialog'));
+      ['.skip-link', '.back-top'].forEach(selector => localize(document.querySelector(selector)));
+      requestAnimationFrame(() => {
+        main.querySelectorAll('.course-item').forEach((item, i) => { item.open = openedCourses[i] || false; });
+        const nextAnchor = anchorId && document.getElementById(anchorId);
+        window.scrollTo({ top: nextAnchor ? scrollY + nextAnchor.getBoundingClientRect().top - anchorOffset : oldY, behavior: 'instant' });
+        updateProgress();
+        languageAnimation?.cancel();
+        if (motionAllowed()) languageAnimation = main.animate([{ opacity: .45 }, { opacity: 1 }], { duration: 240, easing: 'ease-out' });
+      });
+    } else {
+      transitionAppearance();
+      document.documentElement.dataset[key] = value;
+    }
+    savePreference(`pfs-${key}`, value);
+    syncPreferences();
+  });
+  const starAnimations = new Map();
+  function bounceStar(star) {
+    if (!motionAllowed()) return;
+    starAnimations.get(star)?.cancel();
+    const animation = star.querySelector('.star-bounce').animate([
+      { transform: 'translateY(0)' },
+      { transform: `translateY(${star.classList.contains('star-small') ? -10 : -7}px)`, offset: .38 },
+      { transform: 'translateY(0)' }
+    ], { duration: 560, easing: 'cubic-bezier(.22,.7,.3,1)' });
+    starAnimations.set(star, animation);
+    animation.onfinish = () => starAnimations.delete(star);
+  }
+  main.addEventListener('click', event => {
+    const star = event.target.closest('.star');
+    if (star) bounceStar(star);
+  });
+  main.addEventListener('pointerover', event => {
+    const star = event.target.closest('.star');
+    if (event.pointerType === 'mouse' && star && !star.contains(event.relatedTarget)) bounceStar(star);
+  });
+  main.addEventListener('focusin', event => {
+    if (event.target.matches('.star:focus-visible')) bounceStar(event.target);
+  });
+  localize(document.body);
+  syncPreferences();
   const dialog = document.querySelector('#image-dialog');
   dialog.addEventListener('close', () => document.body.classList.remove('dialog-open'));
   dialog.querySelector('.dialog-close').addEventListener('click',() => dialog.close());
   dialog.addEventListener('click',event => { if (event.target === dialog) { const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close(); } });
-  reducedMotion.addEventListener('change', () => {
+  function resetMotion() {
+    languageAnimation?.cancel();
+    clearTimeout(appearanceTimer);
+    document.documentElement.classList.remove('changing-appearance');
+    courseAnimations.forEach(({ animation, opening }, item) => {
+      animation.cancel(); item.open = opening; item.style.overflow = '';
+    });
+    courseAnimations.clear();
     logoAnimation?.cancel();
+    starAnimations.forEach(animation => animation.cancel());
+    starAnimations.clear();
     cancelAnimationFrame(pointerFrame);
     pointerFrame = 0;
     main.querySelectorAll('.hero, .project-cover').forEach(element => {
-      ['--orbit-x', '--orbit-y', '--grid-x', '--grid-y'].forEach(property => element.style.removeProperty(property));
+      ['--orbit-x', '--grid-x', '--grid-y'].forEach(property => element.style.removeProperty(property));
     });
     document.body.classList.remove('motion-enabled');
     setupObservers();
-  });
+  }
+  reducedMotion.addEventListener('change', resetMotion);
   addEventListener('hashchange', () => route());
   document.querySelector('[data-nav="projetos"] span').textContent = String(data.projects.length).padStart(2,'0');
   route(true);

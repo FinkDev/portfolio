@@ -31,7 +31,7 @@ jobs:
           root = Path('dist')
           page = root / 'index.html'
           html = page.read_text(encoding='utf-8')
-          for name in ('styles.css', 'content.js', 'app.js'):
+          for name in ('styles.css', 'preferences.js', 'content.js', 'content.en.js', 'i18n.js', 'app.js'):
               version = sha256((root / name).read_bytes()).hexdigest()[:12]
               html, count = re.subn(r'\./' + re.escape(name) + r'(?:\?v=[a-f0-9]+)?', f'./{name}?v={version}', html)
               if count != 1:

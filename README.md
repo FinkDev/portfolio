@@ -1,6 +1,6 @@
 # Pedro Fink Silva — Portfólio
 
-Portfólio pessoal e acadêmico em português, com página de apresentação e seis páginas de projetos. Desenvolvido com HTML, CSS e JavaScript, sem dependências de instalação ou etapa de compilação.
+Portfólio pessoal e acadêmico em português e inglês, com página de apresentação e seis páginas de projetos. Desenvolvido com HTML, CSS e JavaScript, sem dependências de instalação ou etapa de compilação.
 
 ## Executar
 
@@ -24,6 +24,9 @@ A verificação diferencia letras maiúsculas e minúsculas nos nomes dos arquiv
 dist/
   index.html       Metadados e estrutura global
   content.js       Dados pessoais e dos projetos
+  content.en.js    Tradução dos dados para inglês (compartilha imagens e links)
+  i18n.js          Traduções dos textos da interface
+  preferences.js   Preferências aplicadas antes da primeira pintura
   app.js           Telas, navegação e interações
   styles.css       Identidade visual e responsividade
   assets/          Retrato e screenshots
@@ -39,6 +42,8 @@ A pasta `dist` contém o próprio código do site; seus arquivos são editáveis
 ## Atualizar informações
 
 Edite `dist/content.js`. O objeto principal contém apresentação, contato, formação, experiências, cursos e idiomas. `previousEducation` reúne a formação anterior; `courses` contém os cursos de extensão. Para dividir uma descrição longa em parágrafos, use `\n\n` dentro do texto.
+
+Ao alterar textos, atualize também `dist/content.en.js`. Os projetos traduzidos são associados pelo `id`, e links, tecnologias e caminhos das imagens são compartilhados com o conteúdo original. Legendas e descrições alternativas das imagens têm tradução própria. `dist/i18n.js` contém os pares de textos da interface; ao editar uma frase em `app.js`, atualize o par correspondente.
 
 Cada item de `projects` define um projeto. Os valores padrão no final da lista mantêm uma página navegável mesmo enquanto o preenchimento está incompleto. Campos definidos no projeto têm prioridade sobre os padrões.
 
@@ -79,4 +84,8 @@ As imagens podem ser ampliadas e fechadas pelo botão, pela tecla Escape ou pelo
 
 Preto fosco, branco frio, roxo e vinho, com tipografia editorial, capas numeradas e uma grade alternada no desktop. No celular, os projetos passam a uma coluna e os textos se ajustam à largura disponível.
 
-O site inclui indicação de seção atual, progresso de leitura, botão para voltar ao topo, cursos expansíveis, navegação por teclado e respeito à preferência de movimento reduzido. A escolha entre roxo e vinho é salva apenas no navegador. Space Grotesk e DM Sans são carregadas pelo Google Fonts, com fontes locais de reserva.
+O seletor compacto abre ao passar o mouse, focar pelo teclado ou tocar. Reúne português/inglês, ícones de claro/escuro e bolinhas de roxo/vinho. Fica na lateral no desktop e no cabeçalho no celular. As escolhas ficam apenas no navegador; as animações respeitam a redução de movimento do sistema. A troca de idioma preserva a página de projeto e os cursos abertos. O site inclui indicação de seção atual, progresso de leitura, retorno ao topo, cursos em gaveta e navegação por teclado. Space Grotesk e DM Sans são carregadas pelo Google Fonts, com fontes locais de reserva.
+
+As duas estrelas da abertura flutuam na vertical. Cada uma responde individualmente com um pequeno salto ao passar o mouse, focar pelo teclado ou tocar. Tema e cor mudam gradualmente; a troca de idioma tem uma breve transição de opacidade. No celular, a dupla permanece dentro da composição, sem gestos que bloqueiem a rolagem. As páginas dos projetos não usam os brilhos animados da landing.
+
+A publicação no GitHub Pages versiona os arquivos CSS e JavaScript, incluindo traduções e preferências, para reduzir o uso de versões antigas em cache. Se a porta de prévia estiver ocupada, configure a variável `PORT` antes de executar `npm run dev`.

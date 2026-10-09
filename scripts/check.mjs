@@ -24,8 +24,19 @@ async function checkLocalAsset(url) {
   }
 }
 
-for (const file of ['app.js', 'content.js']) {
+for (const file of ['app.js', 'content.js', 'content.en.js', 'i18n.js', 'preferences.js']) {
   new Script(await readFile(resolve(root, file), 'utf8'), { filename: file });
+}
+runInNewContext(await readFile(resolve(root, 'content.en.js'), 'utf8'), context, { timeout: 1000 });
+const english = context.window.PORTFOLIO_EN;
+assert(english.projects.length === portfolio.projects.length, 'As duas línguas devem conter os mesmos projetos.');
+for (const [index, project] of english.projects.entries()) {
+  const original = portfolio.projects[index];
+  assert(project.id === original.id && project.repository === original.repository, 'Tradução alterou a identidade ou o link de um projeto.');
+  assert(project.screenshots.length === original.screenshots.length, 'Capturas diferentes entre idiomas.');
+  for (const [shotIndex, shot] of project.screenshots.entries()) {
+    assert(shot.src === original.screenshots[shotIndex].src && shot.alt && shot.caption, 'Tradução de imagem incompleta.');
+  }
 }
 for (const project of portfolio.projects) {
   assert(/^[a-z0-9-]+$/.test(project.id), `Identificador inválido: ${project.id}`);
