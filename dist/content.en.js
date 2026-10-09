@@ -38,11 +38,13 @@
       shots: [['Pet shop app main screens', 'The main app screen, with appointments, clients and staff.'], ['Team management and notifications', 'Team management and real-time notifications in the pet shop app.']]
     },
     'projeto-06': {
-      chapter: 'NEXT UP', name: '[Project 06 name]', summary: '[A brief description of the problem and solution.]',
-      role: '[Role to be defined]', period: '[Development period]', description: '[Project overview to be added.]',
-      participation: '[Individual contribution to be added.]', learning: '[Challenges and lessons to be added.]',
-      shots: [['Project main screen', '[Screenshot to be added.]'], ['Project feature in use', '[Screenshot to be added.]']]
+      chapter: 'CHATBOT', name: 'Fatec AI Support Model',
+      summary: 'An artificial intelligence model for automated support and common questions at Fatec.',
+      description: 'An artificial intelligence model for automated support and common questions at Fatec. It was trained on publicly available institutional data so users can get quick, accurate answers to their questions.',
+      learning: 'The main challenge was training the AI model to provide accurate, relevant answers across a variety of questions and situations. I learned to use natural language processing techniques and integrate the model into a responsive web interface.',
+      shots: [['Chatbot main screen', 'The main chatbot screen for automated support at Fatec.'], ['Management screen', 'The system for managing chatbot data.']]
     }
+
   };
   window.PORTFOLIO_EN = {
     ...pt,
@@ -54,12 +56,22 @@
     course: { ...pt.course, name: 'Multiplatform Software Development', start: 'January 2024', end: 'July 2027', period: 'Semesters 1–6' },
     experiences: pt.experiences.map(item => ({ ...item, role: 'Systems Analyst and Web Developer', start: 'June 2024', end: 'Present', description: 'Developing and improving web solutions on a low-code platform for business process automation and management. My work includes requirements and business rule analysis, JavaScript development, API integration and data processing, SQL queries, dashboards and indicators, workflows, SLA controls, validations and automation.\n\nTaking part in weekly client meetings to understand requirements, follow up on requests, align solutions and support users, helping communication between technical and operational teams.\n\nWorking with the team on reusable libraries and components, custom solutions, technical support and problem solving. I also maintain interfaces, fix behavior, optimize performance and improve the user experience.' })),
     previousEducation: pt.previousEducation.map(item => ({ ...item, name: 'Technical Diploma in Systems Analysis and Development', location: 'In person', hours: '1,200 hours' })),
-    courses: pt.courses.map((item, i) => ({ ...item, name: ['Build web apps with ASP.NET Core for beginners', 'Endpoint Security'][i], location: 'Online', hours: item.hours.replace('horas', 'hours') })),
+    courses: pt.courses.map((item, i) => ({ ...item, name: ['Build web apps with ASP.NET Core for beginners', 'Endpoint Security'][i] ?? item.name, location: 'Online', hours: item.hours.replace('horas', 'hours') })),
     languages: [{ name: 'Portuguese', level: 'Native' }, { name: 'English', level: 'Advanced (C1)' }],
-    projects: pt.projects.map((project, i) => {
-      const { shots, ...copy } = projects[project.id];
-      return { ...project, semester: `Semester ${i + 1}`, category: 'Interdisciplinary project', role: 'Front-end Developer', participation: 'I helped build the system interfaces, from layout prototyping and page consistency to UX/UI implementation, interactions and responsiveness. I also worked with the team on the system architecture and technology choices.', ...copy,
-        screenshots: project.screenshots.map((shot, index) => ({ ...shot, alt: shots[index][0], caption: shots[index][1] })) };
+    projects: pt.projects.map(project => {
+      // Content can grow before its translation: keep original copy instead of failing the whole locale.
+      const { shots = [], ...copy } = projects[project.id] ?? {};
+      const draftCopy = project.name?.startsWith('[') ? {
+        chapter: 'NEXT UP', name: '[Project name]', summary: '[A brief description of the problem and solution.]',
+        role: '[Role to be defined]', period: '[Development period]', description: '[Project overview to be added.]',
+        participation: '[Individual contribution to be added.]', learning: '[Challenges and lessons to be added.]'
+      } : {};
+      const sharedCopy = projects[project.id] ? { role: 'Front-end Developer', participation: 'I helped build the system interfaces, from layout prototyping and page consistency to UX/UI implementation, interactions and responsiveness. I also worked with the team on the system architecture and technology choices.' } : {};
+      return { ...project, semester: project.semester.replace(/^(\d+)º semestre$/, 'Semester $1'), category: 'Interdisciplinary project', ...sharedCopy, ...draftCopy, ...copy,
+        screenshots: project.screenshots.map((shot, index) => ({ ...shot,
+          alt: shots[index]?.[0] ?? shot.alt,
+          caption: shots[index]?.[1] ?? shot.caption
+        })) };
     })
   };
 })();

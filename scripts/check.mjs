@@ -27,7 +27,8 @@ async function checkLocalAsset(url) {
 for (const file of ['app.js', 'content.js', 'content.en.js', 'i18n.js', 'preferences.js']) {
   new Script(await readFile(resolve(root, file), 'utf8'), { filename: file });
 }
-runInNewContext(await readFile(resolve(root, 'content.en.js'), 'utf8'), context, { timeout: 1000 });
+const englishSource = await readFile(resolve(root, 'content.en.js'), 'utf8');
+runInNewContext(englishSource, context, { timeout: 1000 });
 const english = context.window.PORTFOLIO_EN;
 assert(english.projects.length === portfolio.projects.length, 'As duas línguas devem conter os mesmos projetos.');
 for (const [index, project] of english.projects.entries()) {
@@ -38,6 +39,17 @@ for (const [index, project] of english.projects.entries()) {
     assert(shot.src === original.screenshots[shotIndex].src && shot.alt && shot.caption, 'Tradução de imagem incompleta.');
   }
 }
+// New projects and screenshots must not disable the language selector.
+const expanded = structuredClone(portfolio);
+const extraShot = { src: null, alt: 'Nova captura', caption: 'Descrição ainda não traduzida' };
+expanded.projects[0].screenshots.push(extraShot);
+expanded.projects.push({ ...structuredClone(portfolio.projects[0]), id: 'projeto-novo', name: 'Novo projeto', semester: '5º semestre' });
+const growthContext = { window: { PORTFOLIO: expanded } };
+runInNewContext(englishSource, growthContext, { timeout: 1000 });
+const grownEnglish = growthContext.window.PORTFOLIO_EN;
+assert(grownEnglish.projects.at(-1).name === 'Novo projeto', 'Projeto sem tradução deve preservar seu conteúdo original.');
+assert(grownEnglish.projects.at(-1).semester === 'Semester 5', 'Semestre não deve depender da posição do projeto na lista.');
+assert(grownEnglish.projects[0].screenshots.at(-1).caption === extraShot.caption, 'Nova captura deve usar a legenda original enquanto não houver tradução.');
 for (const project of portfolio.projects) {
   assert(/^[a-z0-9-]+$/.test(project.id), `Identificador inválido: ${project.id}`);
   assert(!ids.has(project.id), `Identificador duplicado: ${project.id}`);

@@ -111,8 +111,8 @@ window.PORTFOLIO = {
       personalTechnologies: ['Vue.js', 'CSS'],
       learning: 'O principal desafio foi treinar o modelo de IA para fornecer respostas precisas e relevantes, garantindo que ele pudesse lidar com uma variedade de perguntas e situações. Aprendi a utilizar técnicas de processamento de linguagem natural e a integrar o modelo em uma interface web responsiva.',
       screenshots: [
-        { src: './assets/ChatBot1.png', alt: 'Tela principal do chat bot', caption: 'Tela principal do chat bot para atendimento automatizado na FATEC.' },
-        { src: './assets/ChatBot2.png', alt: 'Tela de gestão', caption: 'Sistema para gerenciamento de dados do chat bot.' },
+        { src: './assets/Chatbot1.png', alt: 'Tela principal do chat bot', caption: 'Tela principal do chat bot para atendimento automatizado na FATEC.' },
+        { src: './assets/Chatbot2.png', alt: 'Tela de gestão', caption: 'Sistema para gerenciamento de dados do chat bot.' },
       ],
     },
     { id: 'projeto-07', number: '07', semester: '6º semestre', chapter: 'O próximo passo.', name: '[Nome do projeto 07]', summary: '[Uma breve descrição do problema e da solução desenvolvida.]', color: 'purple', role: '[Função a definir]', participation: '[Participação individual a adicionar.]' },
