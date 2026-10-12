@@ -107,7 +107,7 @@ window.PORTFOLIO = {
       period: '2026-01 | 2026-06',
       description: 'Modelo de inteligência artificial para atendimento automatizado e retirada de dúvidas comuns na FATEC. O modelo foi treinado com base em dados fornecidos publicamente pela instituição, permitindo que os usuários obtenham respostas rápidas e precisas para suas perguntas.',
       technologies: ['PowerShell', 'Python', 'Java', 'Shell', 'vue.js', 'CSS'],
-      repository: 'https://github.com/FATEC-Team-CPI/FATEC-PI-2026-FATEC-AI-BOT',
+      repository: 'https://github.com/FATEC-Team-CPI/FATEC-AI-BOT-FrontEnd-Vue',
       personalTechnologies: ['Vue.js', 'CSS'],
       learning: 'O principal desafio foi treinar o modelo de IA para fornecer respostas precisas e relevantes, garantindo que ele pudesse lidar com uma variedade de perguntas e situações. Aprendi a utilizar técnicas de processamento de linguagem natural e a integrar o modelo em uma interface web responsiva.',
       screenshots: [
